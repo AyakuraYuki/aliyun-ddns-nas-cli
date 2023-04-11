@@ -7,7 +7,9 @@ ENV DOMAIN=ddns.example.com
 ENV REDO=600R
 ENV IPAPI=[IPAPI-GROUP]
 
-RUN mkdir -p /usr/bin/ \
+RUN apt update \
+    && apt install -y curl \
+    && mkdir -p /usr/bin/ \
     && cd /usr/bin/ \
     && curl -skSL $(curl -skSL 'https://api.github.com/repos/AyakuraYuki/aliyun-ddns-nas-cli/releases/latest' | sed -n 's/.*\(https:.*.tar.gz\).*/\1/p' | grep 'linux-amd64') | tar --strip-components=1 -zx linux-amd64/aliddns \
     && ln -sf aliddns aliyun-ddns-nas-cli \
