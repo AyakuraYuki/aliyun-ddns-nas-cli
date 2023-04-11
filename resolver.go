@@ -1,9 +1,9 @@
 package main
 
 import (
+	"aliyun-ddns-nas-cli/pkg/resolvers"
+	"aliyun-ddns-nas-cli/pkg/utils"
 	"github.com/miekg/dns"
-	"github.com/mr-karan/doggo/pkg/resolvers"
-	"github.com/mr-karan/doggo/pkg/utils"
 	"strings"
 	"time"
 )
@@ -18,10 +18,6 @@ func init() {
 		"https://223.6.6.6/dns-query",
 		"tls://1.12.12.12:853",
 		"https://120.53.53.53/dns-query",
-		// "tls://1.12.12.12:853",
-		// "tls://120.53.53.53:853",
-		// "https://1.12.12.12/dns-query",
-		// "https://120.53.53.53/dns-query",
 	}
 	var opts = resolvers.Options{
 		Timeout: 2000 * time.Millisecond,
@@ -31,7 +27,6 @@ func init() {
 		UseTLS: true,
 		UseTCP: true,
 	}
-
 	for _, upstream := range upstreams {
 		var ns resolvers.Resolver
 		switch {

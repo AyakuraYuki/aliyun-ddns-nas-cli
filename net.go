@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/AdguardTeam/golibs/netutil"
 	"golang.org/x/net/publicsuffix"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -35,7 +37,7 @@ func SplitDomain(domain string) (rr, domainName string) {
 	domainName, _ = publicsuffix.EffectiveTLDPlusOne(domain)
 	isValidHostname := IsValidHostname(domain)
 	if !isValidHostname || len(eTLD) == 0 || len(domainName) <= len(eTLD) {
-		log.Fatal("Not a valid domain")
+		log.Println("Not a valid domain")
 		return
 	}
 
@@ -56,6 +58,69 @@ func SplitDomain(domain string) (rr, domainName string) {
 	}
 
 	return
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ip2location
+////////////////////////////////////////////////////////////////////////////////
+
+type IpGeoLocationApiResp struct {
+	Ip          string                   `json:"ip"`
+	CountryCode string                   `json:"country_code"`
+	CountryName string                   `json:"country_name"`
+	RegionName  string                   `json:"region_name"`
+	CityName    string                   `json:"city_name"`
+	Latitude    float64                  `json:"latitude"`
+	Longitude   float64                  `json:"longitude"`
+	ZipCode     string                   `json:"zip_code"`
+	TimeZone    string                   `json:"time_zone"`
+	Asn         string                   `json:"asn"`
+	As          string                   `json:"as"`
+	IsProxy     bool                     `json:"is_proxy"`
+	Error       *IpGeoLocationApiRespErr `json:"error"`
+}
+
+type IpGeoLocationApiRespErr struct {
+	ErrorCode    int    `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
+}
+
+func IpGeoLocationApi(key, ipAddress string, optionalParams url.Values) (*IpGeoLocationApiResp, error) {
+	if key == "" || ipAddress == "" {
+		return &IpGeoLocationApiResp{}, nil
+	}
+
+	params := url.Values{
+		"key":    {key},
+		"ip":     {ipAddress},
+		"format": {"json"},
+	}
+	if optionalParams != nil {
+		for k, v := range optionalParams {
+			if len(v) == 0 {
+				continue
+			}
+			if k == "format" {
+				params.Set(k, v[0])
+				continue
+			}
+			for _, ve := range v {
+				params.Add(k, ve)
+			}
+		}
+	}
+	api := fmt.Sprintf("https://api.ip2location.io/?%s", params.Encode())
+	respBody := HttpGet(api, 3*time.Second)
+	resp := &IpGeoLocationApiResp{}
+	if err := JSON.UnmarshalFromString(respBody, &resp); err != nil {
+		log.Printf("IpGeoLocationApi error cause: %v\n", err)
+		return &IpGeoLocationApiResp{}, err
+	}
+	if resp.Error != nil {
+		log.Printf("IpGeoLocationApi error cause: (%d) %s\n", resp.Error.ErrorCode, resp.Error.ErrorMessage)
+		return &IpGeoLocationApiResp{}, fmt.Errorf("(%d) %s", resp.Error.ErrorCode, resp.Error.ErrorMessage)
+	}
+	return resp, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -237,7 +302,7 @@ func GetIpWithValidator(apis []string, validator func(string) string) (ip string
 func HttpGet(url string, timeout time.Duration) (str string) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatalf("http get error: %v", err)
+		log.Printf("http get error: %v\n", err)
 		return
 	}
 	request.Header.Set("User-Agent", uaSamples[rand.Intn(len(uaSamples))])
@@ -250,7 +315,7 @@ func HttpGet(url string, timeout time.Duration) (str string) {
 	}(resp.Body)
 
 	if err != nil {
-		log.Fatalf("http get error: %v", err)
+		log.Printf("http get error: %v\n", err)
 		return
 	}
 	body, err := io.ReadAll(resp.Body)

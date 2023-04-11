@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+import "github.com/json-iterator/go"
+
+var JSON = jsoniter.ConfigCompatibleWithStandardLibrary
+
 type IpFunc struct {
 	MyIP     func() string
 	Resolver func(domain string) string
