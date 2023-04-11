@@ -7,7 +7,6 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	"log"
 	"strings"
-	"time"
 )
 
 type Application struct {
@@ -102,7 +101,7 @@ func (app *Application) AddDomainRecord(rr, domainName, recordType, value string
 		RR:         tea.String(rr),
 		Type:       tea.String(recordType),
 		Value:      tea.String(value),
-		TTL:        tea.Int64(int64(10 * time.Minute)),
+		TTL:        tea.Int64(600),
 	})
 	if err != nil {
 		log.Printf("AddDomainRecord error cause: %v\n", err)
@@ -118,7 +117,7 @@ func (app *Application) UpdateDomainRecord(recordId, rr, recordType, value strin
 		RR:       tea.String(rr),
 		Type:     tea.String(recordType),
 		Value:    tea.String(value),
-		TTL:      tea.Int64(int64(10 * time.Minute)),
+		TTL:      tea.Int64(600),
 	})
 	if err != nil {
 		log.Printf("UpdateDomainRecord error cause: %v\n", err)
