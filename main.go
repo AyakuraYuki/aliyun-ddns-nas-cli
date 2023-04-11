@@ -47,6 +47,11 @@ func cliGlobalFlags() []cli.Flag {
 			Aliases: []string{"ip2loc-key", "ip2l"},
 			Usage:   "Specify API key for using IP2Location API to get IP GeoLocation",
 		},
+		&cli.BoolFlag{
+			Name:    "ipv6",
+			Aliases: []string{"6"},
+			Usage:   "IPv6",
+		},
 	}
 }
 
@@ -80,6 +85,12 @@ func initialize(c *cli.Context, validateAccessKey bool) error {
 			_ = cli.ShowAppHelp(c)
 			return errors.New("no more managed domain names")
 		}
+	}
+
+	// IPv6
+	if c.Bool("ipv6") {
+		ipFunc.MyIP = GetIPv6
+		ipFunc.Resolver = ResolveIPv6
 	}
 
 	// Custom FindMyIP Function
@@ -208,6 +219,9 @@ func cliUpdate(c *cli.Context) error {
 		return err
 	}
 	recordType := "A"
+	if c.Bool("ipv6") {
+		recordType = "AAAA"
+	}
 	ipAddress := c.String("ip-address")
 	err = app.CliUpdateRecord(rr, domainName, ipAddress, recordType)
 	if err != nil {
@@ -278,6 +292,9 @@ func cliAutoUpdate(c *cli.Context) error {
 		return err
 	}
 	recordType := "A"
+	if c.Bool("ipv6") {
+		recordType = "AAAA"
+	}
 	redo := c.String("redo")
 	if redo != "" && !regexp.MustCompile(`\d+[Rr]?$`).MatchString(redo) {
 		return errors.New("wrong format of parameter redo")
